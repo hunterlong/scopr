@@ -1,4 +1,4 @@
-package scoper
+package scopr
 
 import (
 	"bytes"
@@ -10,13 +10,13 @@ import (
 )
 
 type User struct {
-	Username    string `json:"username" scope:"user,admin,root"`
-	Password    string `json:"-"`
-	EmptyField  string `json:"empty"`
-	Email       string `json:"email" scope:"user,admin,root"`
-	Secrets     string `json:"secrets" scope:"admin,root"`
-	SuperSecret string `json:"super_secret" scope:"root"`
-	Admin 		NullBool `json:"admin" scope:"user"`
+	Username    string   `json:"username" scope:"user,admin,root"`
+	Password    string   `json:"-"`
+	EmptyField  string   `json:"empty"`
+	Email       string   `json:"email" scope:"user,admin,root"`
+	Secrets     string   `json:"secrets" scope:"admin,root"`
+	SuperSecret string   `json:"super_secret" scope:"root"`
+	Admin       NullBool `json:"admin" scope:"user"`
 }
 
 var exampleUser = User{
@@ -26,7 +26,7 @@ var exampleUser = User{
 	Email:       "info@wowowww.com",
 	Secrets:     "$03043iod2djswuhwie",
 	SuperSecret: "this is absolutly top secret",
-	Admin: 		  NullBool{Bool: true, Valid: true},
+	Admin:       NullBool{Bool: true, Valid: true},
 }
 
 type NullBool sql.NullBool

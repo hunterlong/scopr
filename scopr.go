@@ -1,4 +1,4 @@
-package scoper
+package scopr
 
 import (
 	"encoding/json"
@@ -11,15 +11,15 @@ var EmptyShows = true
 
 // A Decoder reads and decodes JSON values from an input stream.
 type Decoder struct {
-	r       io.Reader
-	buf     []byte
-	err     error
+	r   io.Reader
+	buf []byte
+	err error
 }
 
 // An Encoder writes JSON values to an output stream.
 type Encoder struct {
-	w          io.Writer
-	err        error
+	w   io.Writer
+	err error
 }
 
 func NewEncoder(w io.Writer) *Encoder {
@@ -34,7 +34,6 @@ func (enc *Encoder) Encode(v interface{}, scope string) error {
 	_, err = enc.w.Write(jsonD)
 	return err
 }
-
 
 func Marshal(data interface{}, scope string) ([]byte, error) {
 	if reflect.ValueOf(data).Kind() == reflect.Slice {

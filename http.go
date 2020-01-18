@@ -1,4 +1,4 @@
-package scoper
+package scopr
 
 import "net/http"
 
