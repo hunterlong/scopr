@@ -7,6 +7,47 @@ import (
 	"strings"
 )
 
+type Scopr struct {
+	data  interface{}
+	scope string
+}
+
+func New(obj interface{}, scope string) Scopr {
+	return Scopr{data: obj, scope: scope}
+}
+
+// MarshalJSON for Scopr
+func (s Scopr) MarshalJSON() ([]byte, error) {
+	svc := reflect.ValueOf(s.data)
+	if svc.Kind() == reflect.Slice {
+		alldata := make([]map[string]interface{}, 0)
+		for i := 0; i < svc.Len(); i++ {
+			objIndex := svc.Index(i)
+			if objIndex.Kind() == reflect.Ptr {
+				objIndex = objIndex.Elem()
+			}
+			alldata = append(alldata, SafeJson(Scopr{objIndex, s.scope}, s.scope))
+		}
+		return json.Marshal(alldata)
+	}
+	return json.Marshal(SafeJson(svc.Interface(), s.scope))
+}
+
+// MarshalJSON for Scopr
+func (s *Scopr) UnmarshalJSON(data []byte) error {
+	if reflect.ValueOf(s.data).Kind() == reflect.Slice {
+		alldata := make([]map[string]interface{}, 0, 1)
+		sv := reflect.ValueOf(data)
+		for i := 0; i < sv.Len(); i++ {
+			alldata = append(alldata, SafeJson(sv.Index(i).Interface(), s.scope))
+		}
+		s.data = alldata
+		return nil
+	}
+	s.data = SafeJson(data, s.scope)
+	return nil
+}
+
 var EmptyShows = true
 
 // A Decoder reads and decodes JSON values from an input stream.
@@ -26,8 +67,12 @@ func NewEncoder(w io.Writer) *Encoder {
 	return &Encoder{w: w}
 }
 
+func Json(obj interface{}, scope string) ([]byte, error) {
+	return json.Marshal(New(obj, scope))
+}
+
 func (enc *Encoder) Encode(v interface{}, scope string) error {
-	jsonD, err := Marshal(v, scope)
+	jsonD, err := json.Marshal(New(v, scope))
 	if err != nil {
 		return err
 	}
@@ -35,19 +80,13 @@ func (enc *Encoder) Encode(v interface{}, scope string) error {
 	return err
 }
 
-func Marshal(data interface{}, scope string) ([]byte, error) {
-	if reflect.ValueOf(data).Kind() == reflect.Slice {
-		alldata := make([]map[string]interface{}, 0, 1)
-		s := reflect.ValueOf(data)
-		for i := 0; i < s.Len(); i++ {
-			alldata = append(alldata, toSafeJson(s.Index(i).Interface(), scope))
-		}
-		return json.Marshal(alldata)
-	}
-	return json.Marshal(toSafeJson(data, scope))
+func (enc *Encoder) Write(v interface{}) error {
+	dd, _ := json.Marshal(v)
+	_, err := enc.w.Write(dd)
+	return err
 }
 
-func toSafeJson(input interface{}, scope string) map[string]interface{} {
+func SafeJson(input interface{}, scope string) map[string]interface{} {
 	thisData := make(map[string]interface{})
 	t := reflect.TypeOf(input)
 	elem := reflect.ValueOf(input)
@@ -55,10 +94,6 @@ func toSafeJson(input interface{}, scope string) map[string]interface{} {
 
 	var raw map[string]*json.RawMessage
 	json.Unmarshal(d, &raw)
-
-	if t.Kind() == reflect.Ptr {
-		input = &input
-	}
 
 	for i := 0; i < t.NumField(); i++ {
 		field := t.Field(i)
